@@ -7,18 +7,20 @@ name = "coCPM"
 version = "0.1.0"
 description = "A package for consistent Clinical Prediction Model"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.12"
 license = {text = "MIT"}
 authors = [
     {name = "Woojung Kim", email = "kwj0507@gmail.com"},
 ]
 dependencies = [
-    "python=3.11",
     "pandas",
-    "numpy=1.26.4",
-    "sklearn",
+    "numpy==1.26.4",
+    "scikit-learn",
     "torch",
     "lifelines",
+    "seaborn",
+    "tqdm",
+    "scikit-survival",
 ]
 
 [tool.setuptools]

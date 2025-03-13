@@ -8,10 +8,11 @@ from torch.nn.functional import softplus
 
 from torch.distributions import Distribution
 
-from model.utils import F_theta
+from utils.utils import F_theta
 from lifelines import WeibullAFTFitter
 
 from typing import Union, List, Tuple
+
 
 class ODENet(nn.Module):
     """
@@ -33,7 +34,7 @@ class ODENet(nn.Module):
         output_dim: int,
         nonlinearity: nn.Module = nn.ReLU,
         device: str = "cpu",
-        n: int = 15
+        n: int = 15,
     ) -> None:
         """
         Initialize the ODENet.
@@ -51,7 +52,9 @@ class ODENet(nn.Module):
         self.output_dim = output_dim
 
         if device == "mps":
-            self.device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+            self.device = torch.device(
+                "mps" if torch.backends.mps.is_available() else "cpu"
+            )
             print(f"FCNet: {device} specified, {self.device} used")
         else:
             self.device = torch.device("cpu")
@@ -60,14 +63,18 @@ class ODENet(nn.Module):
         self.dudt = nn.Sequential(
             nn.Linear(cov_dim + 1, hidden_dim),
             nonlinearity(),
-#             nn.Linear(hidden_dim, hidden_dim),
-#             nonlinearity(),
+            #             nn.Linear(hidden_dim, hidden_dim),
+            #             nonlinearity(),
             nn.Linear(hidden_dim, self.output_dim),
             nn.Softplus(),
         )
 
-        nn.init.kaiming_normal_(self.dudt[0].weight, mode="fan_out", nonlinearity="relu")
-        nn.init.kaiming_normal_(self.dudt[2].weight, mode="fan_out", nonlinearity="relu")
+        nn.init.kaiming_normal_(
+            self.dudt[0].weight, mode="fan_out", nonlinearity="relu"
+        )
+        nn.init.kaiming_normal_(
+            self.dudt[2].weight, mode="fan_out", nonlinearity="relu"
+        )
 
         self.n = n
         u_n, w_n = np.polynomial.legendre.leggauss(n)
@@ -93,7 +100,9 @@ class ODENet(nn.Module):
         t = x_[:, 0][:, None].to(self.device)
         x = x_[:, 1:].to(self.device)
         tau = torch.matmul(t / 2, 1 + self.u_n)  # N x n
-        tau_ = torch.flatten(tau)[:, None]  # Nn x 1. Think of as N n-dim vectors stacked on top of each other
+        tau_ = torch.flatten(tau)[
+            :, None
+        ]  # Nn x 1. Think of as N n-dim vectors stacked on top of each other
         reppedx = torch.repeat_interleave(
             x,
             torch.tensor([self.n] * t.shape[0], dtype=torch.long, device=self.device),
@@ -164,8 +173,10 @@ class ConsistentDeSurv(nn.Module):
 
         self.lr = lr
         self.optimizer = torch.optim.AdamW(self.parameters(), lr=lr)
-        self.loss_trace = {"train": {"loss": [], "regularisation": [], "likelihood": []}, 
-                           "validation": {"loss": [], "regularisation": [], "likelihood": []}}
+        self.loss_trace = {
+            "train": {"loss": [], "regularisation": [], "likelihood": []},
+            "validation": {"loss": [], "regularisation": [], "likelihood": []},
+        }
 
     def predict(self, x: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         """
@@ -194,17 +205,26 @@ class ConsistentDeSurv(nn.Module):
             pd.DataFrame: DataFrame of survival probabilities.
         """
         with torch.no_grad():
-            t_ = torch.tensor(np.concatenate([t_eval] * x_test.shape[0], 0), dtype=torch.float32)
-            x_ = torch.tensor(np.repeat(x_test, [t_eval.size] * x_test.shape[0], axis=0), dtype=torch.float32)
+            t_ = torch.tensor(
+                np.concatenate([t_eval] * x_test.shape[0], 0), dtype=torch.float32
+            )
+            x_ = torch.tensor(
+                np.repeat(x_test, [t_eval.size] * x_test.shape[0], axis=0),
+                dtype=torch.float32,
+            )
             surv = pd.DataFrame(
                 np.transpose(
-                    (1 - self.predict(x_, t_).reshape((x_test.shape[0], t_eval.size))).detach().numpy()
+                    (1 - self.predict(x_, t_).reshape((x_test.shape[0], t_eval.size)))
+                    .detach()
+                    .numpy()
                 ),
                 index=t_eval,
             )
             return surv
 
-    def forward(self, x: torch.Tensor, t: torch.Tensor, k: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, x: torch.Tensor, t: torch.Tensor, k: torch.Tensor
+    ) -> torch.Tensor:
         """
         Forward pass through the model.
 
@@ -240,7 +260,9 @@ class ConsistentDeSurv(nn.Module):
 
         return -(censterm + uncensterm)
 
-    def regularisation(self, x: torch.Tensor, verbose: bool, n_sample: int = 100) -> Tuple[torch.Tensor, torch.Tensor]:
+    def regularisation(
+        self, x: torch.Tensor, verbose: bool, n_sample: int = 100
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Compute the regularisation term
             Args:
@@ -255,10 +277,20 @@ class ConsistentDeSurv(nn.Module):
         reg_loss = torch.zeros(size=(x.shape[0], 1))
 
         sample_times = torch.zeros(size=(x.shape[0] * n_sample,), device=self.device)
-        sample_logp = torch.zeros(size=(x.shape[0] * n_sample,), device=self.device,)
-        
+        sample_logp = torch.zeros(
+            size=(x.shape[0] * n_sample,),
+            device=self.device,
+        )
+
         for i in range(x.shape[0]):
-            f_theta = F_theta(self.net, self.baseline, x[i].reshape(1, -1), verbose, self.df_columns, self.device)
+            f_theta = F_theta(
+                self.net,
+                self.baseline,
+                x[i].reshape(1, -1),
+                verbose,
+                self.df_columns,
+                self.device,
+            )
             t_j = f_theta.sample(n_sample).to(self.device)
             log_t_j = f_theta.log_prob(t_j).to(self.device)
             sample_times[i * n_sample : (i + 1) * n_sample] = t_j
@@ -267,11 +299,11 @@ class ConsistentDeSurv(nn.Module):
         # Prepare dataframe for the baseline model.
         Xi = x.repeat_interleave(n_sample, dim=0)
         df_x = pd.DataFrame(Xi.cpu().numpy(), columns=self.df_columns)
-        
+
         # This code is for debugging. My eye-test suggests that obtained values are reasonable.
-#         for time, logp in zip(sample_times, sample_logp):
-#             print(f"t: {time}, p_t: {torch.exp(logp)}")
-            
+        #         for time, logp in zip(sample_times, sample_logp):
+        #             print(f"t: {time}, p_t: {torch.exp(logp)}")
+
         # baseline: aft model
         F_hat_t_j = (
             1
@@ -295,7 +327,9 @@ class ConsistentDeSurv(nn.Module):
 
         return div.sum(), reg_loss.sum()
 
-    def _average_repeated_rows(self, tensor: torch.Tensor, n_sample: int) -> torch.Tensor:
+    def _average_repeated_rows(
+        self, tensor: torch.Tensor, n_sample: int
+    ) -> torch.Tensor:
         """
         Average repeated rows in a tensor.
 
@@ -364,7 +398,6 @@ class ConsistentDeSurv(nn.Module):
             wait = 0
 
         for epoch in range(n_epochs):
-
             train_loss = 0.0
             lik_loss = 0.0
             reg_loss = 0.0
@@ -384,30 +417,31 @@ class ConsistentDeSurv(nn.Module):
                 x_ood = x_[o_ == 1.0]
                 t_ood = t_[o_ == 1.0]
                 k_ood = k_[o_ == 1.0]
-                
-                
+
                 self.optimizer.zero_grad()
                 likelihood_term = self.forward(x_in, t_in, k_in)
-                
+
                 consistency_term = 0.0
                 reg_loss_term = 0.0
-                
+
                 if epoch >= pretrain_epochs:
                     if x_ood.shape[0] > 0:
                         consistency_term, reg_loss_term_ = self.regularisation(
-                            x=x_ood, n_sample=n_sample, verbose = verbose,
+                            x=x_ood,
+                            n_sample=n_sample,
+                            verbose=verbose,
                         )
                         reg_loss_term = reg_loss_term_
-                    
+
                 loss = likelihood_term + consistency_term
 
                 loss.backward()
                 self.optimizer.step()
 
-                train_loss += loss.item()                
+                train_loss += loss.item()
                 lik_loss += likelihood_term.item()
                 reg_loss += reg_loss_term
-                
+
             self.loss_trace["train"]["loss"].append(train_loss)
             self.loss_trace["train"]["regularisation"].append(reg_loss)
             self.loss_trace["train"]["likelihood"].append(lik_loss)
@@ -440,17 +474,19 @@ class ConsistentDeSurv(nn.Module):
                         regloss = 0.0
                         if epoch >= pretrain_epochs:
                             if x_ood.shape[0] > 0:
-                                _, regloss_ = self.regularisation(x=x_ood, n_sample=n_sample, verbose = verbose)
+                                _, regloss_ = self.regularisation(
+                                    x=x_ood, n_sample=n_sample, verbose=verbose
+                                )
                                 regloss = regloss_.item()
-                            
+
                         reg_loss += regloss
                         lik_loss += loss.item()
                         val_loss += regloss
-                    
+
                     self.loss_trace["validation"]["loss"].append(val_loss)
                     self.loss_trace["validation"]["regularisation"].append(reg_loss)
                     self.loss_trace["validation"]["likelihood"].append(lik_loss)
-                        
+
                     if epoch >= pretrain_epochs:
                         if val_loss < best_val_loss:
                             best_val_loss = val_loss
@@ -474,4 +510,3 @@ class ConsistentDeSurv(nn.Module):
         if data_loader_val is not None:
             state_dict = torch.load("codesurv_low")
             self.load_state_dict(state_dict)
-

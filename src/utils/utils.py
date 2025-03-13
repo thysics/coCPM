@@ -11,6 +11,7 @@ from scipy.optimize import root_scalar
 
 from typing import Union, List, Tuple
 
+
 class F_theta(nn.Module):
     """
     Distribution class that represents F_theta.
@@ -23,8 +24,16 @@ class F_theta(nn.Module):
         df_columns (list[str]): list[column_names] that is used to train the baseline model.
         device (str): The device to use for computations (default: 'cpu').
     """
-    
-    def __init__(self, net: nn.Module, baseline, x: torch.Tensor, verbose: bool, df_columns: list[str], device: str = "cpu") -> None:
+
+    def __init__(
+        self,
+        net: nn.Module,
+        baseline,
+        x: torch.Tensor,
+        verbose: bool,
+        df_columns: list[str],
+        device: str = "cpu",
+    ) -> None:
         """
         Initialize the F_theta class.
 
@@ -59,7 +68,7 @@ class F_theta(nn.Module):
         res = self.net.forward(z).squeeze()
         return res
 
-    def _inverse_cdf(self, y: torch.Tensor, t_max: float = 500.) -> float:
+    def _inverse_cdf(self, y: torch.Tensor, t_max: float = 500.0) -> float:
         """
         Compute the inverse CDF for a given y using root_scalar.
 
@@ -69,14 +78,18 @@ class F_theta(nn.Module):
         Returns:
             float: The inverse CDF value.
         """
-#         t_sample = self._compute_cdf(y)
-        
-     
+        #         t_sample = self._compute_cdf(y)
+
         result = root_scalar(
-            lambda t: self._compute_cdf(torch.tensor([t], device=self.device, dtype=torch.float32)).detach().numpy() - y.detach().numpy(),
-            bracket=[self.t_min, t_max],
-            method='bisect'
+            lambda t: self._compute_cdf(
+                torch.tensor([t], device=self.device, dtype=torch.float32)
             )
+            .detach()
+            .numpy()
+            - y.detach().numpy(),
+            bracket=[self.t_min, t_max],
+            method="bisect",
+        )
 
         return result.root
 
@@ -91,31 +104,39 @@ class F_theta(nn.Module):
             float: The inverse CDF value.
         """
         retries = 0
-        
-        m = torch.distributions.uniform.Uniform(torch.tensor([0.0001]), torch.tensor([0.950]))
+
+        m = torch.distributions.uniform.Uniform(
+            torch.tensor([0.0001]), torch.tensor([0.950])
+        )
         value = m.sample().detach()
         t_max = 1.0
-        
-        while retries < max_retries:    
+
+        while retries < max_retries:
             try:
                 return self._inverse_cdf(value, t_max)
             except Exception as e:
-                F_t_max = self._compute_cdf(torch.tensor([t_max], device = self.device, dtype = torch.float32))
-#                 print(f"Error occurred with uniform r.v: {value} and t_max: {t_max}, F_t_max: {F_t_max}. Retrying...")       
+                F_t_max = self._compute_cdf(
+                    torch.tensor([t_max], device=self.device, dtype=torch.float32)
+                )
+                #                 print(f"Error occurred with uniform r.v: {value} and t_max: {t_max}, F_t_max: {F_t_max}. Retrying...")
                 t_max += 20
-#                 value = m.sample().detach()
+                #                 value = m.sample().detach()
                 retries += 1
-                
+
                 if retries == 15:
                     value = m.sample().detach()
                     t_max = 3.0
-                    
+
                 if retries == max_retries:
                     print(f"F_t_max: {F_t_max}, current_value: {value}")
-#                     print(f"Error occurred with uniform r.v: {value} and t_max: {t_max}. Retrying...")
-                    raise RuntimeError(f"Max retries reached for sample {value} with t_max: {t_max}")
+                    #                     print(f"Error occurred with uniform r.v: {value} and t_max: {t_max}. Retrying...")
+                    raise RuntimeError(
+                        f"Max retries reached for sample {value} with t_max: {t_max}"
+                    )
 
-    def sample(self, sample_shape: Union[torch.Size, int] = torch.Size()) -> torch.Tensor:
+    def sample(
+        self, sample_shape: Union[torch.Size, int] = torch.Size()
+    ) -> torch.Tensor:
         """
         Generate samples from the distribution.
 
