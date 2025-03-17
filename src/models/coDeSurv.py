@@ -376,6 +376,7 @@ class ConsistentDeSurv(nn.Module):
         data_loader_val: DataLoader = None,
         max_wait: int = 20,
         pretrain_epochs: int = 0,
+        lambda_: float = 1.0,
         verbose: bool = True,
     ) -> None:
         """
@@ -389,6 +390,7 @@ class ConsistentDeSurv(nn.Module):
             data_loader_val (DataLoader, optional): Validation data loader.
             max_wait (int, optional): Maximum wait time for early stopping (default: 20).
             pretrain_epochs (int, optional): n_epochs to be trained before adding regularisation term.
+            lambda_ (float, optional): hyparameter to control the impact of reguluarisation term.
             verbose (bool, optional): Verbosity flag (default: True).
         """
         batch_size = data_loader.batch_size
@@ -433,7 +435,7 @@ class ConsistentDeSurv(nn.Module):
                         )
                         reg_loss_term = reg_loss_term_
 
-                loss = likelihood_term + consistency_term
+                loss = likelihood_term + lambda_ * consistency_term
 
                 loss.backward()
                 self.optimizer.step()

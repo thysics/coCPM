@@ -393,11 +393,6 @@ class DeSurv(nn.Module):
                 x_ = x[argsort_t, :].to(self.device)
                 t_ = t[argsort_t].to(self.device)
                 k_ = k[argsort_t].to(self.device)
-                o_ = o[argsort_t].to(self.device)
-
-                x_ood = x_[o_ == 1.0]
-                t_ood = t_[o_ == 1.0]
-                k_ood = k_[o_ == 1.0]
 
                 self.optimizer.zero_grad()
                 loss = self.forward(x_, t_, k_)
@@ -424,10 +419,6 @@ class DeSurv(nn.Module):
                         x_in = x_[o_ == 0.0]
                         t_in = t_[o_ == 0.0]
                         k_in = k_[o_ == 0.0]
-
-                        x_ood = x_[o_ == 1.0]
-                        t_ood = t_[o_ == 1.0]
-                        k_ood = k_[o_ == 1.0]
 
                         loss = self.forward(x_in, t_in, k_in)
 
