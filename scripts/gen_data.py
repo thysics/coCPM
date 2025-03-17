@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Data generation script for survival analysis with OOD examples.
+Data generation script for survival analysis with reverse knowledge distillation regularisation.
 
 This script replicates the exact data generation process from the notebook.
 It creates:
@@ -12,7 +12,7 @@ It creates:
 5. Preprocessed datasets for training and testing
 
 Usage:
-    python data_generation.py --n 1000 --seed 13 --path './data'
+    python gen_data.py --n 1000 --seed 13 --path './data'
 """
 
 import numpy as np
