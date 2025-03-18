@@ -36,7 +36,9 @@ class Eval:
         self.desurv = self._set_desurv(self.aft, lr=lr, hidden_dim=hidden_dim)
         self.codesurv = self._set_codesurv(self.aft, lr=lr, hidden_dim=hidden_dim)
 
-    def get_loader(self, df: pd.DataFrame, batch_size: int, drop_last: bool = False):
+    def get_loader(
+        self, df: pd.DataFrame, batch_size: int, drop_last: bool = False
+    ) -> DataLoader:
         dataset_train = self._get_dataset(df)
 
         return DataLoader(
@@ -47,7 +49,7 @@ class Eval:
             drop_last=drop_last,
         )
 
-    def _get_dataset(self, df: pd.DataFrame):
+    def _get_dataset(self, df: pd.DataFrame) -> TensorDataset:
         x_train, t_train, e_train, o_train = split_df(
             df, self.x_label, self.t_label, self.e_label, self.o_label
         )
@@ -63,7 +65,7 @@ class Eval:
             ]
         )
 
-    def _train_aft(self, train_data: pd.DataFrame):
+    def _train_aft(self, train_data: pd.DataFrame) -> WeibullAFTFitter:
         # Train baseline (AFT)
         aft = WeibullAFTFitter()
         aft.fit(
@@ -74,7 +76,7 @@ class Eval:
         )
         return aft
 
-    def _set_desurv(self, baseline, lr: float, hidden_dim: int):
+    def _set_desurv(self, baseline, lr: float, hidden_dim: int) -> DeSurv:
         return DeSurv(
             lr,
             len(self.x_label),
@@ -92,7 +94,7 @@ class Eval:
         batch_size: int,
         n_epochs: int,
         max_wait: int,
-    ):
+    ) -> None:
         # Train DeSurv
         df_train_d1, df_val_d1 = split_dataframe(train_data)
 
@@ -110,7 +112,7 @@ class Eval:
 
         torch.save(self.desurv.state_dict(), "eval/eval_desurv")
 
-    def _set_codesurv(self, baseline, lr: float, hidden_dim: int):
+    def _set_codesurv(self, baseline, lr: float, hidden_dim: int) -> ConsistentDeSurv:
         return ConsistentDeSurv(
             lr,
             len(self.x_label),
@@ -130,7 +132,7 @@ class Eval:
         lamda: float,
         n_epochs: int,
         max_wait: int,
-    ):
+    ) -> None:
         # Train coDeSurv
         df_train, df_val = split_dataframe(train_data)
 
@@ -162,7 +164,7 @@ class Eval:
         n_epochs: int = 200,
         max_wait: int = 40,
         lambdas: list[float] = [0.1, 1.0],
-    ):
+    ) -> None:
         # Train baseline & DeSurv using D1 data
         d1_data = self.train_data[self.train_data.OOD == 0.0]
 
@@ -194,7 +196,7 @@ class Eval:
 
     def evaluate(
         self, iterations: int, lambdas: list[float], batch_size: int, n_sample: int
-    ):
+    ) -> dict:
         data_ood_test = self.test_data[self.test_data.OOD == 1.0]
         data_id_test = self.test_data[self.test_data.OOD == 0.0]
 
@@ -254,7 +256,7 @@ class Eval:
                     f"consistency"
                 ].append(inconsistency_metric)
 
-        def compute_cidx(model_name, df):
+        def compute_cidx(model_name: str, df: pd.DataFrame):
             res = 0
             if model_name == "baseline":
                 res = concordance_index_censored(
@@ -264,7 +266,9 @@ class Eval:
                 res = concordance_index_censored(
                     df["Censor"] == 1.0,
                     df["Duration"],
-                    -predict_cif(self.desurv, df, self.x_label, self.t_label).detach().numpy(),
+                    -predict_cif(self.desurv, df, self.x_label, self.t_label)
+                    .detach()
+                    .numpy(),
                 )
             elif model_name == "coDeSurv_Oracle":
                 state_dict = torch.load(f"eval/eval_codesurv_oracle")

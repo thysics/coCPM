@@ -1,7 +1,6 @@
 import argparse
-from workflow.evaluate import (
-    Eval,
-)  # Assuming the original script is saved as eval_script.py
+from workflow.evaluate import Eval
+
 
 
 def main():
@@ -44,14 +43,14 @@ def main():
     evaluator = Eval(
         args.train_data, args.train_data_star, args.test_data, lr=0.001, hidden_dim=8
     )
-    # evaluator.train(
-    #     batch_size=args.batch_size,
-    #     lambdas=args.lambdas,
-    #     hidden_dim=8,
-    #     lr=0.001,
-    #     n_epochs=args.n_epochs,
-    #     max_wait=40,
-    # )
+    evaluator.train(
+        batch_size=args.batch_size,
+        lambdas=args.lambdas,
+        hidden_dim=8,
+        lr=0.001,
+        n_epochs=args.n_epochs,
+        max_wait=40,
+    )
     results = evaluator.evaluate(
         iterations=args.iterations,
         lambdas=args.lambdas,
