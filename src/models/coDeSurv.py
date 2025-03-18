@@ -377,6 +377,7 @@ class ConsistentDeSurv(nn.Module):
         max_wait: int = 20,
         pretrain_epochs: int = 0,
         lambda_: float = 1.0,
+        model_state_dir: str = "./",
         verbose: bool = True,
     ) -> None:
         """
@@ -393,8 +394,6 @@ class ConsistentDeSurv(nn.Module):
             lambda_ (float, optional): hyparameter to control the impact of reguluarisation term.
             verbose (bool, optional): Verbosity flag (default: True).
         """
-        batch_size = data_loader.batch_size
-
         if data_loader_val is not None:
             best_val_loss = np.inf
             wait = 0
@@ -495,12 +494,14 @@ class ConsistentDeSurv(nn.Module):
                             wait = 0
                             if verbose:
                                 print(f"best_epoch: {epoch}")
-                            torch.save(self.state_dict(), "codesurv_low")
+                            torch.save(
+                                self.state_dict(), model_state_dir + "codesurv_low"
+                            )
                         else:
                             wait += 1
 
                         if wait > max_wait:
-                            state_dict = torch.load("codesurv_low")
+                            state_dict = torch.load(model_state_dir + "codesurv_low")
                             self.load_state_dict(state_dict)
                             return
 
@@ -510,5 +511,5 @@ class ConsistentDeSurv(nn.Module):
                         )
 
         if data_loader_val is not None:
-            state_dict = torch.load("codesurv_low")
+            state_dict = torch.load(model_state_dir + "codesurv_low")
             self.load_state_dict(state_dict)

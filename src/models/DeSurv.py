@@ -359,10 +359,10 @@ class DeSurv(nn.Module):
         self,
         data_loader: DataLoader,
         n_epochs: int,
-        n_sample: int = 100,
         logging_freq: int = 10,
         data_loader_val: DataLoader = None,
         max_wait: int = 20,
+        model_state_dir: str = "./",
         verbose: bool = True,
     ) -> None:
         """
@@ -377,8 +377,6 @@ class DeSurv(nn.Module):
             max_wait (int, optional): Maximum wait time for early stopping (default: 20).
             verbose (bool, optional): Verbosity flag (default: True).
         """
-        batch_size = data_loader.batch_size
-
         if data_loader_val is not None:
             best_val_loss = np.inf
             wait = 0
@@ -429,12 +427,12 @@ class DeSurv(nn.Module):
                         wait = 0
                         if verbose:
                             print(f"best_epoch: {epoch}")
-                        torch.save(self.state_dict(), "desurv_low")
+                        torch.save(self.state_dict(), model_state_dir + "desurv_low")
                     else:
                         wait += 1
 
                     if wait > max_wait:
-                        state_dict = torch.load("desurv_low")
+                        state_dict = torch.load(model_state_dir + "desurv_low")
                         self.load_state_dict(state_dict)
                         return
 
@@ -444,5 +442,5 @@ class DeSurv(nn.Module):
                         )
 
         if data_loader_val is not None:
-            state_dict = torch.load("desurv_low")
+            state_dict = torch.load(model_state_dir + "desurv_low")
             self.load_state_dict(state_dict)
