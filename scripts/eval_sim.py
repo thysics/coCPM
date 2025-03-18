@@ -46,8 +46,6 @@ def main():
     evaluator.train(
         batch_size=args.batch_size,
         lambdas=args.lambdas,
-        hidden_dim=8,
-        lr=0.001,
         n_epochs=args.n_epochs,
         max_wait=40,
     )
