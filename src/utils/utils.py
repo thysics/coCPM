@@ -69,11 +69,13 @@ class F_theta(nn.Module):
 
         return res
 
-    def _inverse_transform_sample(self, t_min:float = 0, t_max: float = 100.0):
+    def _inverse_transform_sample(self, t_min:float = 0, t_max: float = 30.0):
         """
         Use Inverse Transform Sampling on a grid
+        
+        Note: In simulated example the data isnt standardised to [0,1] across all datasets - as the maximum duration in D2 and D3 is greater than in D1
         """
-        t_eval = np.linspace(t_min, t_max, 1000)
+        t_eval = np.linspace(t_min, t_max, 100)
         
         with torch.no_grad():
             

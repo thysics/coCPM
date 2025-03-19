@@ -390,9 +390,9 @@ def generate_data(n=1000, random_seed=13, file_path="./data"):
 
     # Save datasets
     print(f"Saving datasets to {file_path}...")
-    train_data.to_csv(os.path.join(file_path, f"sim_train.csv"), index=False)
-    train_data_star.to_csv(os.path.join(file_path, f"sim_train_star.csv"), index=False)
-    test_data.to_csv(os.path.join(file_path, "sim_test.csv"), index=False)
+    train_data.to_csv(os.path.join(file_path, f"sim_train_{random_seed}.csv"), index=False)
+    train_data_star.to_csv(os.path.join(file_path, f"sim_train_star_{random_seed}.csv"), index=False)
+    test_data.to_csv(os.path.join(file_path, f"sim_test_{random_seed}.csv"), index=False)
 
     # Print dataset info
     print("\nDataset Information:")

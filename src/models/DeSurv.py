@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import pandas as pd
+import os
 
 from torch.utils.data import TensorDataset, DataLoader
 from torch.nn.functional import softplus
@@ -284,7 +285,14 @@ class DeSurv(nn.Module):
                 self.df_columns,
                 self.device,
             )
-            t_j = f_theta.sample(n_sample).to(self.device)
+            # Previous method 
+            # t_j = f_theta.sample(n_sample).to(self.device)
+            #print(f"sampled time to event {torch.mean(t_j)}  {torch.std(t_j)}")
+            
+            # New discrete empirical method
+            t_j = f_theta.sample_new(n_sample)
+            #print(f"new sampled time to event {torch.mean(t_j)}  {torch.std(t_j)}")
+            
             log_t_j = f_theta.log_prob(t_j).to(self.device)
             sample_times[i * n_sample : (i + 1) * n_sample] = t_j
             sample_logp[i * n_sample : (i + 1) * n_sample] = log_t_j
@@ -362,7 +370,7 @@ class DeSurv(nn.Module):
         logging_freq: int = 10,
         data_loader_val: DataLoader = None,
         max_wait: int = 20,
-        model_state_dir: str = "./",
+        model_state_dir = None,
         verbose: bool = True,
     ) -> None:
         """
@@ -380,6 +388,10 @@ class DeSurv(nn.Module):
         if data_loader_val is not None:
             best_val_loss = np.inf
             wait = 0
+        
+        if model_state_dir is None:
+            model_state_dir = os.path.dirname(os.path.realpath(__file__)) + "/../../eval/"
+            print(model_state_dir)
 
         for epoch in range(n_epochs):
             train_loss = 0.0

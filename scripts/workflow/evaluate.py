@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import os
 
 import pandas as pd
 from collections import defaultdict
@@ -13,7 +14,6 @@ from models.coDeSurv import ConsistentDeSurv
 from models.DeSurv import DeSurv
 from utils.helpers import split_dataframe, split_df, predict_cif, compute_timediff
 
-import logging
 
 class Eval:
     def __init__(
@@ -27,6 +27,9 @@ class Eval:
         self.train_data = pd.read_csv(train_data_path)  # True OOD
         self.test_data = pd.read_csv(test_data_path)  # Test Set
         self.train_data_star = pd.read_csv(train_data_star_path)  # Simulated OOD
+        
+        self.seed_prefix = train_data_path[-7:-4]
+        self.model_state_dir = os.path.dirname(os.path.realpath(__file__)) + "/../../eval/" + self.seed_prefix
 
         self.x_label = ["x1", "x2"]
         self.t_label = "Duration"
@@ -105,13 +108,13 @@ class Eval:
         self.desurv.optimize(
             d1_loader_train,
             n_epochs=n_epochs,
-            logging_freq=10,
+            logging_freq=5, #10,
             data_loader_val=d1_loader_val,
             max_wait=max_wait,
-            model_state_dir="eval/",
+            model_state_dir=self.model_state_dir,
         )
-
-        torch.save(self.desurv.state_dict(), "eval/eval_desurv")
+        
+        torch.save(self.desurv.state_dict(), self.model_state_dir + "eval_desurv")
 
     def _set_codesurv(self, baseline, lr: float, hidden_dim: int) -> ConsistentDeSurv:
         return ConsistentDeSurv(
@@ -144,20 +147,21 @@ class Eval:
 
         self.codesurv.optimize(
             data_loader_train,
-            n_sample=1,  # 50
-            n_epochs=n_epochs,
-            logging_freq=10,
+            n_sample=50,
+            n_epochs=n_epochs+100,                        # 50 iterations with regularisation
+            logging_freq=5, #10,
             data_loader_val=data_loader_val,
             max_wait=max_wait,
             lambda_=lamda if not oracle else 1.0,
-            pretrain_epochs=300,
-            model_state_dir="eval/",
+            pretrain_epochs=100,                         # Pre-train longer
+            model_state_dir=self.model_state_dir,
             verbose=True,
         )
+        
         if oracle:
-            torch.save(self.codesurv.state_dict(), f"eval/eval_codesurv_oracle")
+            torch.save(self.codesurv.state_dict(), self.model_state_dir + f"eval_codesurv_oracle")
         else:
-            torch.save(self.codesurv.state_dict(), f"eval/eval_codesurv_{lamda}")
+            torch.save(self.codesurv.state_dict(), self.model_state_dir + f"eval_codesurv_{lamda}")
 
     def train(
         self,
@@ -171,7 +175,7 @@ class Eval:
         d1_data = self.train_data[self.train_data.OOD == 0.0]
 
         print("Training baseline AFT model using D1")	
-        self._train_aft(d1_data)
+        self.aft = self._train_aft(d1_data)                  # Is this being done twice?
         
         print("Training DeSurv model using D1")
         self._train_desurv(
@@ -232,7 +236,7 @@ class Eval:
 
         # DeSurv
         for i in range(iterations):
-            state_dict = torch.load(f"eval/eval_desurv")
+            state_dict = torch.load(self.model_state_dir + f"eval_desurv")
             self.desurv.load_state_dict(state_dict)
             self.desurv.eval()
             inconsistency_metric = compute_timediff(
@@ -245,7 +249,7 @@ class Eval:
             models["DeSurv"][f"consistency"].append(inconsistency_metric)
 
             # coDeSurv (D1 and D2)
-            state_dict = torch.load(f"eval/eval_codesurv_oracle")
+            state_dict = torch.load(self.model_state_dir + f"eval_codesurv_oracle")
             self.codesurv.load_state_dict(state_dict)
             self.codesurv.eval()
             inconsistency_metric = compute_timediff(
@@ -259,7 +263,7 @@ class Eval:
 
             # CoDeSurv (D1 and D3)
             for lamda in lambdas:
-                state_dict = torch.load(f"eval/eval_codesurv_{lamda}")
+                state_dict = torch.load(self.model_state_dir + f"eval_codesurv_{lamda}")
                 self.codesurv.load_state_dict(state_dict)
                 self.codesurv.eval()
                 inconsistency_metric = compute_timediff(
@@ -288,7 +292,7 @@ class Eval:
                     .numpy(),
                 )
             elif model_name == "coDeSurv_Oracle":
-                state_dict = torch.load(f"eval/eval_codesurv_oracle")
+                state_dict = torch.load(self.model_state_dir + f"eval_codesurv_oracle")
                 self.codesurv.load_state_dict(state_dict)
                 self.codesurv.eval()
 
@@ -300,7 +304,7 @@ class Eval:
                     .numpy(),
                 )
             else:  # specify the value of lambda, instead of model name
-                state_dict = torch.load(f"eval/eval_codesurv_{model_name}")
+                state_dict = torch.load(self.model_state_dir + f"eval_codesurv_{model_name}")
                 self.codesurv.load_state_dict(state_dict)
                 self.codesurv.eval()
 

@@ -1,0 +1,11 @@
++--------------------------------------------------------------------------+
+| Job on the BlueBEAR cluster:
+| Starting at Wed Mar 19 02:58:41 2025 for gaddcz(836045)
+| Identity jobid 19814076 jobname main_job.sh
+| Running against project gokhalkm-optimal and in partition icelake-shared
+| Requested cpu=12,mem=48G,node=1,billing=12 - 12:00:00 walltime
+| Allocated cpu=12,mem=48G,node=1,billing=12
+| Assigned to nodes bear-pg0207u30b
+| Command ./main_job.sh
+| WorkDir /rds/homes/g/gaddcz/ondemand/data/sys/myjobs/projects/default/34
++--------------------------------------------------------------------------+

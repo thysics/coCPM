@@ -1,0 +1,17 @@
++--------------------------------------------------------------------------+
+| Job on the BlueBEAR cluster:
+| Starting at Wed Mar 19 02:58:30 2025 for gaddcz(836045)
+| Identity jobid 19814070 jobname sbatch
+| Running against project subramaa-mum-predict and in partition cascadelake-hdr-shared
+| Requested cpu=1,mem=4G,node=1,billing=1 - 00:05:00 walltime
+| Allocated cpu=1,mem=4G,node=1,billing=1
+| Assigned to nodes bear-pg0206u03a
+| Command (null)
+| WorkDir /rds/homes/g/gaddcz/ondemand/data/sys/myjobs/projects/default/34
++--------------------------------------------------------------------------+
++--------------------------------------------------------------------------+
+| Finished at Wed Mar 19 02:58:41 2025 for gaddcz(836045) on the BlueBEAR Cluster
+| Required (00:00.373 cputime, 612K memory used) - 00:00:11 walltime
+| JobState COMPLETING - Reason None
+| Exitcode 0:0
++--------------------------------------------------------------------------+

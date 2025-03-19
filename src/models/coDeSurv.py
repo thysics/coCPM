@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import pandas as pd
-from tqdm import tqdm
+import os
 
 from torch.utils.data import TensorDataset, DataLoader
 from torch.nn.functional import softplus
@@ -283,8 +283,7 @@ class ConsistentDeSurv(nn.Module):
             device=self.device,
         )
 
-        #for i in range(x.shape[0]):
-        for i in tqdm(range(x.shape[0])):
+        for i in range(x.shape[0]):
             f_theta = F_theta(
                 self.net,
                 self.baseline,
@@ -387,7 +386,7 @@ class ConsistentDeSurv(nn.Module):
         max_wait: int = 20,
         pretrain_epochs: int = 0,
         lambda_: float = 1.0,
-        model_state_dir: str = "./",
+        model_state_dir = None,
         verbose: bool = True,
     ) -> None:
         """
@@ -407,6 +406,10 @@ class ConsistentDeSurv(nn.Module):
         if data_loader_val is not None:
             best_val_loss = np.inf
             wait = 0
+        
+        if model_state_dir is None:
+            model_state_dir = os.path.dirname(os.path.realpath(__file__)) + "/../../eval/"
+            print(model_state_dir)
 
         for epoch in range(n_epochs):
             train_loss = 0.0
@@ -461,6 +464,10 @@ class ConsistentDeSurv(nn.Module):
                 #if verbose:
                 #    print(f"\tEpoch: {epoch:2}. Total loss: {train_loss:11.2f}")
                 #    print(f"\tEpoch: {epoch:2}. Regularisation: {reg_loss:11.2f}")
+                
+                if epoch == pretrain_epochs:
+                    print(f"Adding regularisation term with lambda {lambda_}")
+                            
                 if data_loader_val is not None:
                     val_loss = 0.0
                     val_lik_loss = 0.0
@@ -486,8 +493,7 @@ class ConsistentDeSurv(nn.Module):
                         val_consistency_term = 0.0
                         val_reg_loss_term = 0.0
                         #regloss = 0.0
-                        if epoch == pretrain_epochs:
-                            print(f"Adding regularisation term")
+                        
                         if epoch >= pretrain_epochs:
                             if x_ood.shape[0] > 0:
                                 val_consistency_term, val_reg_loss_term_ = self.regularisation(
@@ -533,7 +539,7 @@ class ConsistentDeSurv(nn.Module):
                     if verbose:
                         print(
                             #f"\tEpoch: {epoch:2}. Total val loss (i.e. regularisation): {val_loss:11.2f}. Likelihood: {lik_loss:11.2f}"
-                            f"\tEpoch: {epoch:2}{'*' if wait == 0 else ''}. Total train loss: {train_loss:11.2f}. Total val loss: {val_loss:11.2f}. Likelihood: {val_lik_loss:11.2f} with regularisation: {val_reg_loss:11.2f}"
+                            f"\tEpoch: {epoch:2}{'*' if wait == 0 else ''}. Total train loss: {train_loss:11.2f}. Total val loss: {val_loss:11.2f}. Likelihood: {val_lik_loss:11.2f} + Penalty: {val_consistency_term:11.2f} (with regularisation: {val_reg_loss:11.2f})"
                         )
 
         if data_loader_val is not None:
