@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import pandas as pd
+from tqdm import tqdm
 
 from torch.utils.data import TensorDataset, DataLoader
 from torch.nn.functional import softplus
@@ -282,7 +283,8 @@ class ConsistentDeSurv(nn.Module):
             device=self.device,
         )
 
-        for i in range(x.shape[0]):
+        #for i in range(x.shape[0]):
+        for i in tqdm(range(x.shape[0])):
             f_theta = F_theta(
                 self.net,
                 self.baseline,
@@ -291,7 +293,15 @@ class ConsistentDeSurv(nn.Module):
                 self.df_columns,
                 self.device,
             )
-            t_j = f_theta.sample(n_sample).to(self.device)
+            
+            # Previous method 
+            #t_j = f_theta.sample(n_sample).to(self.device)
+            #print(f"sampled time to event {torch.mean(t_j)}  {torch.std(t_j)}")
+            
+            # New discrete empirical method
+            t_j = f_theta.sample_new(n_sample)
+            #print(f"new sampled time to event {torch.mean(t_j)}  {torch.std(t_j)}")
+            
             log_t_j = f_theta.log_prob(t_j).to(self.device)
             sample_times[i * n_sample : (i + 1) * n_sample] = t_j
             sample_logp[i * n_sample : (i + 1) * n_sample] = log_t_j
@@ -448,13 +458,13 @@ class ConsistentDeSurv(nn.Module):
             self.loss_trace["train"]["likelihood"].append(lik_loss)
 
             if epoch % logging_freq == 0:
-                if verbose:
-                    print(f"\tEpoch: {epoch:2}. Total loss: {train_loss:11.2f}")
-                    print(f"\tEpoch: {epoch:2}. Regularisation: {reg_loss:11.2f}")
+                #if verbose:
+                #    print(f"\tEpoch: {epoch:2}. Total loss: {train_loss:11.2f}")
+                #    print(f"\tEpoch: {epoch:2}. Regularisation: {reg_loss:11.2f}")
                 if data_loader_val is not None:
                     val_loss = 0.0
-                    lik_loss = 0.0
-                    reg_loss = 0.0
+                    val_lik_loss = 0.0
+                    val_reg_loss = 0.0
                     for batch_idx, (x, t, k, o) in enumerate(data_loader_val):
                         argsort_t = torch.argsort(t)
                         x_ = x[argsort_t, :].to(self.device)
@@ -471,22 +481,35 @@ class ConsistentDeSurv(nn.Module):
                         t_ood = t_[o_ == 1.0]
                         k_ood = k_[o_ == 1.0]
 
-                        loss = self.forward(x_in, t_in, k_in)
-                        regloss = 0.0
+                        val_likelihood_term = self.forward(x_in, t_in, k_in)
+                        
+                        val_consistency_term = 0.0
+                        val_reg_loss_term = 0.0
+                        #regloss = 0.0
+                        if epoch == pretrain_epochs:
+                            print(f"Adding regularisation term")
                         if epoch >= pretrain_epochs:
                             if x_ood.shape[0] > 0:
-                                _, regloss_ = self.regularisation(
-                                    x=x_ood, n_sample=n_sample, verbose=verbose
+                                val_consistency_term, val_reg_loss_term_ = self.regularisation(
+                                    x=x_ood,
+                                    n_sample=n_sample,
+                                    verbose=verbose
                                 )
-                                regloss = regloss_.item()
+                                val_reg_loss_term = val_reg_loss_term_
+                        
+                        loss = val_likelihood_term + lambda_ * val_consistency_term
 
-                        reg_loss += regloss
-                        lik_loss += loss.item()
-                        val_loss += regloss
+                        val_loss += loss.item()
+                        val_lik_loss += val_likelihood_term.item()
+                        val_reg_loss += val_reg_loss_term
+
+                        #reg_loss += regloss
+                        #lik_loss += loss.item()
+                        #val_loss += regloss
 
                     self.loss_trace["validation"]["loss"].append(val_loss)
-                    self.loss_trace["validation"]["regularisation"].append(reg_loss)
-                    self.loss_trace["validation"]["likelihood"].append(lik_loss)
+                    self.loss_trace["validation"]["regularisation"].append(val_reg_loss)
+                    self.loss_trace["validation"]["likelihood"].append(val_lik_loss)
 
                     if epoch >= pretrain_epochs:
                         if val_loss < best_val_loss:
@@ -498,6 +521,8 @@ class ConsistentDeSurv(nn.Module):
                                 self.state_dict(), model_state_dir + "codesurv_low"
                             )
                         else:
+                            if verbose:
+                                print(f"best_epoch unchanged: {epoch}")                       
                             wait += 1
 
                         if wait > max_wait:
@@ -507,7 +532,8 @@ class ConsistentDeSurv(nn.Module):
 
                     if verbose:
                         print(
-                            f"\tEpoch: {epoch:2}. Total val loss (i.e. regularisation): {val_loss:11.2f}. Likelihood: {lik_loss:11.2f}"
+                            #f"\tEpoch: {epoch:2}. Total val loss (i.e. regularisation): {val_loss:11.2f}. Likelihood: {lik_loss:11.2f}"
+                            f"\tEpoch: {epoch:2}{'*' if wait == 0 else ''}. Total train loss: {train_loss:11.2f}. Total val loss: {val_loss:11.2f}. Likelihood: {val_lik_loss:11.2f} with regularisation: {val_reg_loss:11.2f}"
                         )
 
         if data_loader_val is not None:

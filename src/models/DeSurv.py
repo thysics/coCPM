@@ -384,7 +384,7 @@ class DeSurv(nn.Module):
         for epoch in range(n_epochs):
             train_loss = 0.0
             lik_loss = 0.0
-            reg_loss = 0.0
+            # reg_loss = 0.0
 
             for batch_idx, (x, t, k, o) in enumerate(data_loader):
                 argsort_t = torch.argsort(t)
@@ -401,11 +401,11 @@ class DeSurv(nn.Module):
                 train_loss += loss.item()
 
             if epoch % logging_freq == 0:
-                if verbose:
-                    print(f"\tEpoch: {epoch:2}. Total loss: {train_loss:11.2f}")
+                #if verbose:
+                #    print(f"\tEpoch: {epoch:2}. Total train loss: {train_loss:11.2f}")
                 if data_loader_val is not None:
                     val_loss = 0
-                    reg_loss = 0
+                    # reg_loss = 0
                     for batch_idx, (x, t, k, o) in enumerate(data_loader_val):
                         argsort_t = torch.argsort(t)
                         x_ = x[argsort_t, :].to(self.device)
@@ -425,20 +425,22 @@ class DeSurv(nn.Module):
                     if val_loss < best_val_loss:
                         best_val_loss = val_loss
                         wait = 0
-                        if verbose:
-                            print(f"best_epoch: {epoch}")
+                        #if verbose:
+                        #    print(f"best_epoch: {epoch}. Caching best checkpoint")
                         torch.save(self.state_dict(), model_state_dir + "desurv_low")
                     else:
                         wait += 1
 
                     if wait > max_wait:
+                        print(f"Loading best checkpoint")
                         state_dict = torch.load(model_state_dir + "desurv_low")
                         self.load_state_dict(state_dict)
                         return
 
                     if verbose:
                         print(
-                            f"\tEpoch: {epoch:2}. Total val loss: {val_loss:11.2f}. Regularisation: {reg_loss:11.2f}"
+                            # f"\tEpoch: {epoch:2}{'*' if wait == 0 else ''}. Total train loss: {train_loss:11.2f}. Total val loss: {val_loss:11.2f}. Regularisation: {reg_loss:11.2f}"
+                            f"\tEpoch: {epoch:2}{'*' if wait == 0 else ''}. Total train loss: {train_loss:11.2f}. Total val loss: {val_loss:11.2f}."
                         )
 
         if data_loader_val is not None:

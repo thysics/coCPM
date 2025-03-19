@@ -17,7 +17,7 @@ def main():
     parser.add_argument(
         "--test_data", type=str, required=True, help="Path to test data CSV"
     )
-    parser.add_argument("--n_epochs", type=int, default=300, help="Number of epochs")
+    parser.add_argument("--n_epochs", type=int, default=3000, help="Number of epochs")          # Updated because models weren't converging
     parser.add_argument(
         "--iterations", type=int, default=10, help="Number of iterations for evaluation"
     )
@@ -47,7 +47,7 @@ def main():
         batch_size=args.batch_size,
         lambdas=args.lambdas,
         n_epochs=args.n_epochs,
-        max_wait=40,
+        max_wait=10,                                                                            # Updated. 40 validation intervals at 10 epochs apart meant max wait was 400 epochs
     )
     results = evaluator.evaluate(
         iterations=args.iterations,

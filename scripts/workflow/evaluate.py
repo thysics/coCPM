@@ -13,6 +13,7 @@ from models.coDeSurv import ConsistentDeSurv
 from models.DeSurv import DeSurv
 from utils.helpers import split_dataframe, split_df, predict_cif, compute_timediff
 
+import logging
 
 class Eval:
     def __init__(
@@ -104,7 +105,7 @@ class Eval:
         self.desurv.optimize(
             d1_loader_train,
             n_epochs=n_epochs,
-            logging_freq=50,
+            logging_freq=10,
             data_loader_val=d1_loader_val,
             max_wait=max_wait,
             model_state_dir="eval/",
@@ -143,13 +144,13 @@ class Eval:
 
         self.codesurv.optimize(
             data_loader_train,
-            n_sample=50,
+            n_sample=1,  # 50
             n_epochs=n_epochs,
             logging_freq=10,
             data_loader_val=data_loader_val,
             max_wait=max_wait,
             lambda_=lamda if not oracle else 1.0,
-            pretrain_epochs=30,
+            pretrain_epochs=300,
             model_state_dir="eval/",
             verbose=True,
         )
@@ -165,31 +166,47 @@ class Eval:
         max_wait: int = 40,
         lambdas: list[float] = [0.1, 1.0],
     ) -> None:
+    
         # Train baseline & DeSurv using D1 data
         d1_data = self.train_data[self.train_data.OOD == 0.0]
 
+        print("Training baseline AFT model using D1")	
         self._train_aft(d1_data)
-        self._train_desurv(d1_data, self.aft, batch_size, n_epochs, max_wait)
+        
+        print("Training DeSurv model using D1")
+        self._train_desurv(
+            d1_data,
+            # self.aft,                 # Removed as I assume bug from refactor
+            batch_size,
+            n_epochs,
+            max_wait)
 
         # Train coDeSurv using D1 and D2
+        print("Training coDeSurv model using D1 and D2")
         self._train_codesurv(
             self.train_data,
-            self.aft,
-            True,
-            1.0,
+            # self.aft,                 # Removed as I assume bug from refactor
+            # True,                     # Moved below, presumably ordering changed from refactor
+            # 1.0,                      # Moved below, presumably ordering changed from refactor + -1 as not actually used (optional kwarg)
             batch_size,
+            True,
+            -1.0,
             n_epochs,
             max_wait,
         )
 
         # Train coDeSurv using D1 and D3
+        print("Training coDeSurv model using D1 and D3")
         for lamda in lambdas:
+            print(f"\tlambda {lamda}")
             self._train_codesurv(
                 self.train_data_star,
-                self.aft,
+                # self.aft,             # Removed as I assume bug from refactor
+                # False,                # Moved below, presumably ordering changed from refactor
+                # lamda,                # Moved below, presumably ordering changed from refactor
+                batch_size,
                 False,
                 lamda,
-                batch_size,
                 n_epochs,
                 max_wait,
             )

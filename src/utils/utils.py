@@ -66,7 +66,35 @@ class F_theta(nn.Module):
         t = t[:, None].to(self.device)
         z = torch.cat((t, self.x), 1)
         res = self.net.forward(z).squeeze()
+
         return res
+
+    def _inverse_transform_sample(self, t_min:float = 0, t_max: float = 100.0):
+        """
+        Use Inverse Transform Sampling on a grid
+        """
+        t_eval = np.linspace(t_min, t_max, 1000)
+        
+        with torch.no_grad():
+            
+            # TODO: vectorise this
+            pred = []
+            for _t in t_eval:
+                _t = torch.tensor([_t], device=self.device, dtype=torch.float32)
+                _pred = self._compute_cdf(_t).item()               
+                pred.append(_pred)
+        
+        rsample = np.random.uniform(0, pred[-1])                    # Randomly sample between 0 and the maximum cumulative prob F(t_max)
+        time_index = np.sum(np.asarray(pred) <= rsample) - 1
+        
+        return torch.tensor([t_eval[time_index]], device=self.device, dtype=torch.float32)
+
+    def sample_new(
+        self, sample_shape: Union[torch.Size, int] = torch.Size()
+    ) -> torch.Tensor:
+    
+        samples = [self._inverse_transform_sample() for _ in range(sample_shape)]
+        return torch.tensor(samples, device=self.device)  
 
     def _inverse_cdf(self, y: torch.Tensor, t_max: float = 500.0) -> float:
         """
