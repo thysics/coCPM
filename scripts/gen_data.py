@@ -297,7 +297,7 @@ def _gen_ood_star(dgp: DGP, random_seed: int, n: int):
     ood_indicator = create_ood_indicator(x_ood_star_base, threshold=thres)
     x_ood_star = x_ood_star_base[ood_indicator == 1.0]
 
-    train_idx = np.random.choice(np.arange(x_ood_star.shape[0]), 203)
+    train_idx = np.random.choice(np.arange(x_ood_star.shape[0]), 200)
 
     x_ood_star = x_ood_star[train_idx]
 
@@ -364,8 +364,6 @@ def generate_data(n=1000, random_seed=13, file_path="./data"):
 
     # Preprocess data
     print("Preprocessing data...")
-    # d1_data = data_train[data_train.OOD == 0.0]
-    # d2_data = data_train[data_train.OOD == 1.0]
     d1_data = drop_high_duration(data_train)
     d2_data = drop_high_duration(data_ood_train)
     d3_data = drop_high_duration(data_ood_star)

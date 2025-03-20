@@ -66,7 +66,7 @@ def main():
             batch_size=args.batch_size,
             lambdas=args.lambdas,
             n_epochs=args.n_epochs,
-            max_wait=10,  # Updated. 40 validation intervals at 10 epochs apart meant max wait was 400 epochs
+            max_wait=100,  # Updated. 40 validation intervals at 10 epochs apart meant max wait was 400 epochs
         )
 
     results = evaluator.evaluate(
