@@ -147,13 +147,13 @@ class Eval:
 
         self.codesurv.optimize(
             data_loader_train,
-            n_sample=50,
-            n_epochs=n_epochs+100,                        # 50 iterations with regularisation
+            n_sample=100,
+            n_epochs=n_epochs+300,                       # 
             logging_freq=5, #10,
             data_loader_val=data_loader_val,
             max_wait=max_wait,
             lambda_=lamda if not oracle else 1.0,
-            pretrain_epochs=100,                         # Pre-train longer
+            pretrain_epochs=300,                         # 300 iterations with regularisation
             model_state_dir=self.model_state_dir,
             verbose=True,
         )

@@ -9,3 +9,9 @@
 | Command ./main_job.sh
 | WorkDir /rds/homes/g/gaddcz/ondemand/data/sys/myjobs/projects/default/34
 +--------------------------------------------------------------------------+
++--------------------------------------------------------------------------+
+| Finished at Wed Mar 19 14:58:53 2025 for gaddcz(836045) on the BlueBEAR Cluster
+| Required (00:20.061 cputime, 420877K memory used) - 12:00:12 walltime
+| JobState COMPLETING - Reason TimeLimit
+| Exitcode 0:15
++--------------------------------------------------------------------------+

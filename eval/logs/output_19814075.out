@@ -78,3 +78,4 @@ NCCL/2.12.12-GCCcore-11.3.0-CUDA-11.7.0
 PyTorch/2.0.1-foss-2022a-CUDA-11.7.0
 icelake
 /rds/projects/s/subramaa-mum-predict/CharlesGadd_Oxford/Projects/coCPM/my-virtual-env-icelake
+slurmstepd: error: *** JOB 19814075 ON bear-pg0207u27b CANCELLED AT 2025-03-19T14:58:53 DUE TO TIME LIMIT ***
