@@ -288,12 +288,15 @@ class ConsistentDeSurv(nn.Module):
         # Proposed vectorised method
         if True:
             assert n_sample > 0
-            
-            f_theta = F_theta(self.net, self.baseline, x, verbose, self.df_columns, self.device)          # Now that code is updated to take x as an argument, this doesnt need to be initialiesd every single call to regularisation()
-            t_j_all = f_theta.sample_vectorised(x, sample_shape=n_sample)                            #[torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50])]
-            
+
+            f_theta = F_theta(
+                self.net, self.baseline, x, verbose, self.df_columns, self.device
+            )  # Now that code is updated to take x as an argument, this doesnt need to be initialiesd every single call to regularisation()
+            t_j_all = f_theta.sample_vectorised(
+                x, sample_shape=n_sample
+            )  # [torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50]), torch.Size([50])]
+
             for i in range(x.shape[0]):
-                
                 f_theta = F_theta(
                     self.net,
                     self.baseline,
@@ -302,7 +305,7 @@ class ConsistentDeSurv(nn.Module):
                     self.df_columns,
                     self.device,
                 )
-                
+
                 t_j = t_j_all[i]
                 log_t_j = f_theta.log_prob(t_j).to(self.device)
                 sample_times[i * n_sample : (i + 1) * n_sample] = t_j
@@ -310,7 +313,6 @@ class ConsistentDeSurv(nn.Module):
 
         else:
             for i in range(x.shape[0]):
-                
                 f_theta = F_theta(
                     self.net,
                     self.baseline,
@@ -319,20 +321,20 @@ class ConsistentDeSurv(nn.Module):
                     self.df_columns,
                     self.device,
                 )
-                
-                # Previous method 
+
+                # Previous method
                 if True:
                     # start_time = time.time()
-                    t_j = f_theta.sample(n_sample).to(self.device)          # torch.Size([50])
+                    t_j = f_theta.sample(n_sample).to(self.device)  # torch.Size([50])
                     # print(f"self.regularisation sample {i} time: {time.time() - start_time:.4f} seconds")
-                    #print(f"sampled time to event {torch.mean(t_j)}  {torch.std(t_j)}")
+                    # print(f"sampled time to event {torch.mean(t_j)}  {torch.std(t_j)}")
                 else:
                     # New discrete empirical method
                     # start_time = time.time()
                     t_j = f_theta.sample_new(n_sample)
                     # print(f"self.regularisation sample_new {i} time: {time.time() - start_time:.4f} seconds")
-                    #print(f"new sampled time to event {torch.mean(t_j)}  {torch.std(t_j)}")
-                
+                    # print(f"new sampled time to event {torch.mean(t_j)}  {torch.std(t_j)}")
+
                 log_t_j = f_theta.log_prob(t_j).to(self.device)
                 sample_times[i * n_sample : (i + 1) * n_sample] = t_j
                 sample_logp[i * n_sample : (i + 1) * n_sample] = log_t_j
@@ -418,7 +420,7 @@ class ConsistentDeSurv(nn.Module):
         max_wait: int = 20,
         pretrain_epochs: int = 0,
         lambda_: float = 1.0,
-        model_state_dir = None,
+        model_state_dir=None,
         verbose: bool = True,
     ) -> None:
         """
@@ -438,13 +440,14 @@ class ConsistentDeSurv(nn.Module):
         if data_loader_val is not None:
             best_val_loss = np.inf
             wait = 0
-        
+
         if model_state_dir is None:
-            model_state_dir = os.path.dirname(os.path.realpath(__file__)) + "/../../eval/"
+            model_state_dir = (
+                os.path.dirname(os.path.realpath(__file__)) + "/../../eval/"
+            )
             print(model_state_dir)
 
         for epoch in range(n_epochs):
-
             train_loss = 0.0
             lik_loss = 0.0
             reg_loss = 0.0
@@ -498,13 +501,13 @@ class ConsistentDeSurv(nn.Module):
             self.loss_trace["train"]["likelihood"].append(lik_loss)
 
             if epoch % logging_freq == 0:
-                #if verbose:
+                # if verbose:
                 #    print(f"\tEpoch: {epoch:2}. Total loss: {train_loss:11.2f}")
                 #    print(f"\tEpoch: {epoch:2}. Regularisation: {reg_loss:11.2f}")
-                
+
                 if epoch == pretrain_epochs:
                     print(f"Adding regularisation term with lambda {lambda_}")
-                            
+
                 if data_loader_val is not None:
                     val_loss = 0.0
                     val_lik_loss = 0.0
@@ -527,18 +530,18 @@ class ConsistentDeSurv(nn.Module):
                         k_ood = k_[o_ == 1.0]
 
                         val_likelihood_term = self.forward(x_in, t_in, k_in)
-                        
+
                         val_consistency_term = 0.0
                         val_reg_loss_term = 0.0
 
                         if epoch >= pretrain_epochs:
                             if x_ood.shape[0] > 0:
-                                val_consistency_term, val_reg_loss_term = self.regularisation(
-                                    x=x_ood,
-                                    n_sample=n_sample,
-                                    verbose=verbose
+                                val_consistency_term, val_reg_loss_term = (
+                                    self.regularisation(
+                                        x=x_ood, n_sample=n_sample, verbose=verbose
+                                    )
                                 )
-                        
+
                         loss = val_likelihood_term + lambda_ * val_consistency_term
 
                         val_loss += loss.item()
@@ -567,7 +570,6 @@ class ConsistentDeSurv(nn.Module):
 
                     if verbose:
                         print(
-                            #f"\tEpoch: {epoch:2}. Total val loss (i.e. regularisation): {val_loss:11.2f}. Likelihood: {lik_loss:11.2f}"
                             f"\tEpoch: {epoch:2}{'*' if wait == 0 else ''}. Total train loss: {train_loss:11.2f}. Total val loss: {val_loss:11.2f}. Likelihood+Penalty: ({val_lik_loss:11.2f}+{lambda_}*{val_cons_loss:11.2f}) ... (with regularisation: {val_reg_loss:11.2f})"
                         )
 

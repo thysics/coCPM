@@ -285,14 +285,14 @@ class DeSurv(nn.Module):
                 self.df_columns,
                 self.device,
             )
-            # Previous method 
+            # Previous method
             # t_j = f_theta.sample(n_sample).to(self.device)
-            #print(f"sampled time to event {torch.mean(t_j)}  {torch.std(t_j)}")
-            
+            # print(f"sampled time to event {torch.mean(t_j)}  {torch.std(t_j)}")
+
             # New discrete empirical method
             t_j = f_theta.sample_new(n_sample)
-            #print(f"new sampled time to event {torch.mean(t_j)}  {torch.std(t_j)}")
-            
+            # print(f"new sampled time to event {torch.mean(t_j)}  {torch.std(t_j)}")
+
             log_t_j = f_theta.log_prob(t_j).to(self.device)
             sample_times[i * n_sample : (i + 1) * n_sample] = t_j
             sample_logp[i * n_sample : (i + 1) * n_sample] = log_t_j
@@ -370,7 +370,7 @@ class DeSurv(nn.Module):
         logging_freq: int = 10,
         data_loader_val: DataLoader = None,
         max_wait: int = 20,
-        model_state_dir = None,
+        model_state_dir=None,
         verbose: bool = True,
     ) -> None:
         """
@@ -388,9 +388,11 @@ class DeSurv(nn.Module):
         if data_loader_val is not None:
             best_val_loss = np.inf
             wait = 0
-        
+
         if model_state_dir is None:
-            model_state_dir = os.path.dirname(os.path.realpath(__file__)) + "/../../eval/"
+            model_state_dir = (
+                os.path.dirname(os.path.realpath(__file__)) + "/../../eval/"
+            )
             print(model_state_dir)
 
         for epoch in range(n_epochs):
@@ -413,7 +415,7 @@ class DeSurv(nn.Module):
                 train_loss += loss.item()
 
             if epoch % logging_freq == 0:
-                #if verbose:
+                # if verbose:
                 #    print(f"\tEpoch: {epoch:2}. Total train loss: {train_loss:11.2f}")
                 if data_loader_val is not None:
                     val_loss = 0
@@ -437,7 +439,7 @@ class DeSurv(nn.Module):
                     if val_loss < best_val_loss:
                         best_val_loss = val_loss
                         wait = 0
-                        #if verbose:
+                        # if verbose:
                         #    print(f"best_epoch: {epoch}. Caching best checkpoint")
                         torch.save(self.state_dict(), model_state_dir + "desurv_low")
                     else:

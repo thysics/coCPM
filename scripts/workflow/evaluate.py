@@ -27,15 +27,20 @@ class Eval:
         self.train_data = pd.read_csv(train_data_path)  # True OOD
         self.test_data = pd.read_csv(test_data_path)  # Test Set
         self.train_data_star = pd.read_csv(train_data_star_path)  # Simulated OOD
-        
+
         self.seed_prefix = train_data_path[-7:-4]
-        self.model_state_dir = os.path.dirname(os.path.realpath(__file__)) + "/../../eval/" + self.seed_prefix
+        self.model_state_dir = (
+            os.path.dirname(os.path.realpath(__file__))
+            + "/../../eval/"
+            + self.seed_prefix
+        )
 
         self.x_label = ["x1", "x2"]
         self.t_label = "Duration"
         self.e_label = "Censor"
         self.o_label = "OOD"
 
+        print("Training baseline AFT model using D1")
         self.aft = self._train_aft(self.train_data[self.train_data.OOD == 0.0])
         self.desurv = self._set_desurv(self.aft, lr=lr, hidden_dim=hidden_dim)
         self.codesurv = self._set_codesurv(self.aft, lr=lr, hidden_dim=hidden_dim)
@@ -108,12 +113,12 @@ class Eval:
         self.desurv.optimize(
             d1_loader_train,
             n_epochs=n_epochs,
-            logging_freq=5, #10,
+            logging_freq=5,  # 10,
             data_loader_val=d1_loader_val,
             max_wait=max_wait,
             model_state_dir=self.model_state_dir,
         )
-        
+
         torch.save(self.desurv.state_dict(), self.model_state_dir + "eval_desurv")
 
     def _set_codesurv(self, baseline, lr: float, hidden_dim: int) -> ConsistentDeSurv:
@@ -148,20 +153,26 @@ class Eval:
         self.codesurv.optimize(
             data_loader_train,
             n_sample=100,
-            n_epochs=n_epochs+300,                       # 
-            logging_freq=5, #10,
+            n_epochs=n_epochs + 300,  #
+            logging_freq=5,  # 10,
             data_loader_val=data_loader_val,
             max_wait=max_wait,
             lambda_=lamda if not oracle else 1.0,
-            pretrain_epochs=300,                         # 300 iterations with regularisation
+            pretrain_epochs=30,
             model_state_dir=self.model_state_dir,
             verbose=True,
         )
-        
+
         if oracle:
-            torch.save(self.codesurv.state_dict(), self.model_state_dir + f"eval_codesurv_oracle")
+            torch.save(
+                self.codesurv.state_dict(),
+                self.model_state_dir + f"eval_codesurv_oracle",
+            )
         else:
-            torch.save(self.codesurv.state_dict(), self.model_state_dir + f"eval_codesurv_{lamda}")
+            torch.save(
+                self.codesurv.state_dict(),
+                self.model_state_dir + f"eval_codesurv_{lamda}",
+            )
 
     def train(
         self,
@@ -170,28 +181,16 @@ class Eval:
         max_wait: int = 40,
         lambdas: list[float] = [0.1, 1.0],
     ) -> None:
-    
         # Train baseline & DeSurv using D1 data
         d1_data = self.train_data[self.train_data.OOD == 0.0]
 
-        print("Training baseline AFT model using D1")	
-        self.aft = self._train_aft(d1_data)                  # Is this being done twice?
-        
         print("Training DeSurv model using D1")
-        self._train_desurv(
-            d1_data,
-            # self.aft,                 # Removed as I assume bug from refactor
-            batch_size,
-            n_epochs,
-            max_wait)
+        self._train_desurv(d1_data, batch_size, n_epochs, max_wait)
 
         # Train coDeSurv using D1 and D2
         print("Training coDeSurv model using D1 and D2")
         self._train_codesurv(
             self.train_data,
-            # self.aft,                 # Removed as I assume bug from refactor
-            # True,                     # Moved below, presumably ordering changed from refactor
-            # 1.0,                      # Moved below, presumably ordering changed from refactor + -1 as not actually used (optional kwarg)
             batch_size,
             True,
             -1.0,
@@ -205,9 +204,6 @@ class Eval:
             print(f"\tlambda {lamda}")
             self._train_codesurv(
                 self.train_data_star,
-                # self.aft,             # Removed as I assume bug from refactor
-                # False,                # Moved below, presumably ordering changed from refactor
-                # lamda,                # Moved below, presumably ordering changed from refactor
                 batch_size,
                 False,
                 lamda,
@@ -304,7 +300,9 @@ class Eval:
                     .numpy(),
                 )
             else:  # specify the value of lambda, instead of model name
-                state_dict = torch.load(self.model_state_dir + f"eval_codesurv_{model_name}")
+                state_dict = torch.load(
+                    self.model_state_dir + f"eval_codesurv_{model_name}"
+                )
                 self.codesurv.load_state_dict(state_dict)
                 self.codesurv.eval()
 
@@ -324,14 +322,14 @@ class Eval:
                 compute_cidx(model_name, data_ood_test),
             )
             if model_name in ["baseline", "DeSurv", "coDeSurv_Oracle"]:
-                models[model_name]["c-index_d1"].append(cidx_d1)
-                models[model_name]["c-index_d2"].append(cidx_d2)
+                models[model_name]["c-index_d1"].append(cidx_d1[0])
+                models[model_name]["c-index_d2"].append(cidx_d2[0])
             else:
                 models[f"coDeSurv_lambda_{str(model_name).replace('.', '_')}"][
                     f"c-index_d1"
-                ].append(cidx_d1)
+                ].append(cidx_d1[0])
                 models[f"coDeSurv_lambda_{str(model_name).replace('.', '_')}"][
                     f"c-index_d2"
-                ].append(cidx_d2)
+                ].append(cidx_d2[0])
 
         return models
