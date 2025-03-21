@@ -544,7 +544,7 @@ class ConsistentDeSurv(nn.Module):
 
                         loss = val_likelihood_term + lambda_ * val_consistency_term
 
-                        val_loss += val_consistency_term
+                        val_loss += loss.item()
                         val_lik_loss += val_likelihood_term.item()
                         val_reg_loss += val_reg_loss_term
                         val_cons_loss += val_consistency_term
