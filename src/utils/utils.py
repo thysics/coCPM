@@ -65,7 +65,7 @@ class F_theta(nn.Module):
         z = torch.cat((t, x), 1)
         return self.net.forward(z).squeeze()
 
-    def _inverse_transform_sample(self, t_min: float = 0, t_max: float = 30.0):
+    def _inverse_transform_sample(self, t_min: float = 0, t_max: float = 1.0):
         """
         Use Inverse Transform Sampling on a grid
 
@@ -99,7 +99,7 @@ class F_theta(nn.Module):
         return torch.tensor(samples, device=self.device)
 
     def _inverse_transform_sample_vectorised(
-        self, x, t_min: float = 0, t_max: float = 30.0
+        self, x, t_min: float = 0, t_max: float = 1.0
     ) -> torch.Tensor:
         """ """
 
@@ -143,7 +143,7 @@ class F_theta(nn.Module):
         return time_points
 
     def sample_vectorised(
-        self, x, sample_shape: int = 50, t_min: float = 0.0, t_max: float = 30.0
+        self, x, sample_shape: int = 50, t_min: float = 0.0, t_max: float = 1.0
     ):
         """ """
         sample_list = [

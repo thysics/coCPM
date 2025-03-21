@@ -438,7 +438,7 @@ class ConsistentDeSurv(nn.Module):
             verbose (bool, optional): Verbosity flag (default: True).
         """
         if data_loader_val is not None:
-            best_val_loss = np.inf
+            best_val_reg_loss = np.inf
             wait = 0
 
         if model_state_dir is None:
@@ -544,7 +544,7 @@ class ConsistentDeSurv(nn.Module):
 
                         loss = val_likelihood_term + lambda_ * val_consistency_term
 
-                        val_loss += loss.item()
+                        val_loss += val_consistency_term.item()
                         val_lik_loss += val_likelihood_term.item()
                         val_reg_loss += val_reg_loss_term
                         val_cons_loss += val_consistency_term
@@ -554,8 +554,8 @@ class ConsistentDeSurv(nn.Module):
                     self.loss_trace["validation"]["likelihood"].append(val_lik_loss)
 
                     if epoch >= pretrain_epochs:
-                        if val_loss < best_val_loss:
-                            best_val_loss = val_loss
+                        if val_reg_loss < best_val_reg_loss:
+                            best_val_reg_loss = val_reg_loss
                             wait = 0
                             torch.save(
                                 self.state_dict(), model_state_dir + "codesurv_low"
