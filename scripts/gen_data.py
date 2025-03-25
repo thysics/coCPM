@@ -12,7 +12,7 @@ It creates:
 5. Preprocessed datasets for training and testing
 
 Usage:
-    python gen_data.py --n 1000 --seed 13 --path './data'
+    python scripts/gen_data.py --n 1000 --seed 13 --path './data'
 """
 
 import numpy as np
@@ -291,9 +291,9 @@ def _gen_dataset(
 def _gen_ood_star(dgp: DGP, random_seed: int, n: int):
     np.random.seed(random_seed)
 
-    x_ood_star_base = dgp.generate_covariates(type="H1", N=20 * n)
+    x_ood_star_base = dgp.generate_covariates(type="H1", N=100 * n)
 
-    thres = np.percentile(compute_pdf(x_ood_star_base), 1)
+    thres = np.percentile(compute_pdf(x_ood_star_base), 0.2)
     ood_indicator = create_ood_indicator(x_ood_star_base, threshold=thres)
     x_ood_star = x_ood_star_base[ood_indicator == 1.0]
 
@@ -362,17 +362,17 @@ def generate_data(n=1000, random_seed=13, file_path="./data"):
     # Combine test datasets
     test_data = pd.concat([data_id_test, data_ood_test], axis=0)
 
-    # Preprocess data
-    print("Preprocessing data...")
-    d1_data = drop_high_duration(data_train)
-    d2_data = drop_high_duration(data_ood_train)
-    d3_data = drop_high_duration(data_ood_star)
-
     # Normalize durations
-    d1_data = normalize_column(d1_data, d1_data, t_label)
-    d2_data = normalize_column(d2_data, d1_data, t_label)
-    d3_data = normalize_column(d3_data, d1_data, t_label)
-
+    d1_data = normalize_column(data_train, data_train, t_label)
+    d2_data = normalize_column(data_ood_train, data_train, t_label)
+    d3_data = normalize_column(data_ood_star, data_train, t_label)
+    test_data = normalize_column(test_data, data_train, t_label)
+    
+    d1_data = drop_high_duration(d1_data)
+    d2_data = drop_high_duration(d2_data)
+    d3_data = drop_high_duration(d3_data)
+    test_data = drop_high_duration(test_data)
+    
     # Add OOD indicators
     d1_data[o_label] = 0.0
     d2_data[o_label] = 1.0

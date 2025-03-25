@@ -4,15 +4,10 @@ import torch.nn as nn
 import pandas as pd
 import os
 
-from torch.utils.data import TensorDataset, DataLoader
-from torch.nn.functional import softplus
-
-from torch.distributions import Distribution
+from torch.utils.data import DataLoader
 
 from utils.utils import F_theta
-from lifelines import WeibullAFTFitter
-
-from typing import Union, List, Tuple
+from typing import List, Tuple
 
 import time
 
@@ -36,7 +31,7 @@ class ODENet(nn.Module):
         hidden_dim: int,
         output_dim: int,
         nonlinearity: nn.Module = nn.ReLU,
-        device: str = "cpu",
+        device: str = "gpu",
         n: int = 15,
     ) -> None:
         """
@@ -59,6 +54,9 @@ class ODENet(nn.Module):
                 "mps" if torch.backends.mps.is_available() else "cpu"
             )
             print(f"FCNet: {device} specified, {self.device} used")
+        elif device == "gpu":
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            print(f"FCNet: {device} specified, {self.device} used")
         else:
             self.device = torch.device("cpu")
             print(f"CondODENet: {device} specified, {self.device} used")
@@ -66,18 +64,16 @@ class ODENet(nn.Module):
         self.dudt = nn.Sequential(
             nn.Linear(cov_dim + 1, hidden_dim),
             nonlinearity(),
-            #             nn.Linear(hidden_dim, hidden_dim),
-            #             nonlinearity(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nonlinearity(),
             nn.Linear(hidden_dim, self.output_dim),
             nn.Softplus(),
         )
 
-        nn.init.kaiming_normal_(
-            self.dudt[0].weight, mode="fan_out", nonlinearity="relu"
-        )
-        nn.init.kaiming_normal_(
-            self.dudt[2].weight, mode="fan_out", nonlinearity="relu"
-        )
+        for i in range(len(self.dudt)):
+            nn.init.kaiming_normal_(
+                self.dudt[i].weight, mode="fan_out", nonlinearity="relu"
+            )
 
         self.n = n
         u_n, w_n = np.polynomial.legendre.leggauss(n)
@@ -150,7 +146,7 @@ class ConsistentDeSurv(nn.Module):
         baseline,
         df_columns: List[str] = ["x1", "x2"],
         nonlinearity: nn.Module = nn.ReLU,
-        device: str = "cpu",
+        device: str = "gpu",
         n: int = 15,
     ) -> None:
         """

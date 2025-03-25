@@ -34,7 +34,7 @@ class CondODENet(nn.Module):
         hidden_dim: int,
         output_dim: int,
         nonlinearity: nn.Module = nn.ReLU,
-        device: str = "cpu",
+        device: str = "gpu",
         n: int = 15,
     ) -> None:
         """
@@ -56,6 +56,9 @@ class CondODENet(nn.Module):
             self.device = torch.device(
                 "mps" if torch.backends.mps.is_available() else "cpu"
             )
+            print(f"FCNet: {device} specified, {self.device} used")
+        elif device == "gpu":
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             print(f"FCNet: {device} specified, {self.device} used")
         else:
             self.device = torch.device("cpu")
@@ -148,7 +151,7 @@ class DeSurv(nn.Module):
         baseline,
         df_columns: List[str] = ["x1", "x2", "x3", "x4"],
         nonlinearity: nn.Module = nn.ReLU,
-        device: str = "cpu",
+        device: str = "gpu",
         n: int = 15,
     ) -> None:
         """
