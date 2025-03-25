@@ -367,12 +367,12 @@ def generate_data(n=1000, random_seed=13, file_path="./data"):
     d2_data = normalize_column(data_ood_train, data_train, t_label)
     d3_data = normalize_column(data_ood_star, data_train, t_label)
     test_data = normalize_column(test_data, data_train, t_label)
-    
+
     d1_data = drop_high_duration(d1_data)
     d2_data = drop_high_duration(d2_data)
     d3_data = drop_high_duration(d3_data)
     test_data = drop_high_duration(test_data)
-    
+
     # Add OOD indicators
     d1_data[o_label] = 0.0
     d2_data[o_label] = 1.0

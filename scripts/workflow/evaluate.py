@@ -92,7 +92,7 @@ class Eval:
             hidden_dim,
             baseline=baseline,
             nonlinearity=nn.ReLU,
-            device="gpu",
+            device="cpu",
             n=15,
             df_columns=self.x_label,
         )
@@ -128,7 +128,7 @@ class Eval:
             hidden_dim,
             baseline=baseline,
             nonlinearity=nn.ReLU,
-            device="gpu",
+            device="cpu",
             n=15,
             df_columns=self.x_label,
         )

@@ -9,8 +9,6 @@ from torch.utils.data import DataLoader
 from utils.utils import F_theta
 from typing import List, Tuple
 
-import time
-
 
 class ODENet(nn.Module):
     """
@@ -31,7 +29,7 @@ class ODENet(nn.Module):
         hidden_dim: int,
         output_dim: int,
         nonlinearity: nn.Module = nn.ReLU,
-        device: str = "gpu",
+        device: str = "cpu",
         n: int = 15,
     ) -> None:
         """
@@ -54,7 +52,7 @@ class ODENet(nn.Module):
                 "mps" if torch.backends.mps.is_available() else "cpu"
             )
             print(f"FCNet: {device} specified, {self.device} used")
-        elif device == "gpu":
+        elif device == "cuda":
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             print(f"FCNet: {device} specified, {self.device} used")
         else:
@@ -70,7 +68,7 @@ class ODENet(nn.Module):
             nn.Softplus(),
         )
 
-        for i in range(len(self.dudt)):
+        for i in range(len(self.dudt), 0, 2):
             nn.init.kaiming_normal_(
                 self.dudt[i].weight, mode="fan_out", nonlinearity="relu"
             )
@@ -146,7 +144,7 @@ class ConsistentDeSurv(nn.Module):
         baseline,
         df_columns: List[str] = ["x1", "x2"],
         nonlinearity: nn.Module = nn.ReLU,
-        device: str = "gpu",
+        device: str = "cpu",
         n: int = 15,
     ) -> None:
         """

@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Default values
-TRAIN_DATA="data/posted/sim_test.csv"
-TRAIN_DATA_STAR="data/posted/sim_train_star.csv"
-TEST_DATA="data/posted/sim_test.csv"
+TRAIN_DATA="data/sim_test.csv"
+TRAIN_DATA_STAR="data/sim_train_star.csv"
+TEST_DATA="data/sim_test.csv"
 
 # Define other parameters
 N_EPOCHS=1000
