@@ -25,7 +25,7 @@ class F_theta(nn.Module):
         x: torch.Tensor,
         verbose: bool,
         df_columns: list[str],
-        device: str = "cpu",
+        device: str = "gpu",
     ) -> None:
         """
         Initialize the F_theta class.
@@ -65,7 +65,7 @@ class F_theta(nn.Module):
         z = torch.cat((t, x), 1)
         return self.net.forward(z).squeeze()
 
-    def _inverse_transform_sample(self, t_min: float = 0, t_max: float = 1.0):
+    def _inverse_transform_sample(self, t_min: float = 0, t_max: float = 5.0):
         """
         Use Inverse Transform Sampling on a grid
 
@@ -103,7 +103,7 @@ class F_theta(nn.Module):
     ) -> torch.Tensor:
         """ """
 
-        self.t_eval = np.linspace(t_min, t_max, 100)
+        self.t_eval = np.linspace(t_min, t_max, 1000)
 
         t_test = torch.tensor(
             np.concatenate([self.t_eval] * x.shape[0], 0),
@@ -115,7 +115,7 @@ class F_theta(nn.Module):
         # Batched predict: Cannot make all predictions at once due to memory constraints
         pred_bsz = 2**15  # Predict in batches
         pred = []
-        pi = []
+
         for X_test_batched, t_test_batched in zip(
             torch.split(X_test, pred_bsz), torch.split(t_test, pred_bsz)
         ):

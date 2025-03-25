@@ -92,7 +92,7 @@ class Eval:
             hidden_dim,
             baseline=baseline,
             nonlinearity=nn.ReLU,
-            device="cpu",
+            device="gpu",
             n=15,
             df_columns=self.x_label,
         )
@@ -128,7 +128,7 @@ class Eval:
             hidden_dim,
             baseline=baseline,
             nonlinearity=nn.ReLU,
-            device="cpu",
+            device="gpu",
             n=15,
             df_columns=self.x_label,
         )
@@ -153,12 +153,12 @@ class Eval:
         self.codesurv.optimize(
             data_loader_train,
             n_sample=100,
-            n_epochs=n_epochs + 300,  #
+            n_epochs=n_epochs,  #
             logging_freq=5,  # 10,
             data_loader_val=data_loader_val,
             max_wait=max_wait,
             lambda_=lamda if not oracle else 1.0,
-            pretrain_epochs=30,
+            pretrain_epochs=100,
             model_state_dir=self.model_state_dir,
             verbose=True,
         )
@@ -178,7 +178,7 @@ class Eval:
         self,
         batch_size: int,
         n_epochs: int = 200,
-        max_wait: int = 40,
+        max_wait: int = 100,
         lambdas: list[float] = [0.1, 1.0],
     ) -> None:
         # Train baseline & DeSurv using D1 data
