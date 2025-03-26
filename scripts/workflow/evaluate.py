@@ -187,17 +187,6 @@ class Eval:
         print("Training DeSurv model using D1")
         self._train_desurv(d1_data, batch_size, n_epochs, max_wait)
 
-        # Train coDeSurv using D1 and D2
-        print("Training coDeSurv model using D1 and D2")
-        self._train_codesurv(
-            self.train_data,
-            batch_size,
-            True,
-            -1.0,
-            n_epochs,
-            max_wait,
-        )
-
         # Train coDeSurv using D1 and D3
         print("Training coDeSurv model using D1 and D3")
         for lamda in lambdas:
@@ -210,6 +199,17 @@ class Eval:
                 n_epochs,
                 max_wait,
             )
+        
+        # Train coDeSurv using D1 and D2
+        print("Training coDeSurv model using D1 and D2")
+        self._train_codesurv(
+            self.train_data,
+            batch_size,
+            True,
+            -1.0,
+            n_epochs,
+            max_wait,
+        )
 
     def evaluate(
         self, iterations: int, lambdas: list[float], batch_size: int, n_sample: int
